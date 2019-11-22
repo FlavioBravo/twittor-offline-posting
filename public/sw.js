@@ -1,8 +1,11 @@
 // imports
+importScripts('https://cdn.jsdelivr.net/npm/pouchdb@7.1.1/dist/pouchdb.min.js');
+
+importScripts('js/sw-db.js');
 importScripts('js/sw-utils.js');
 
 
-const STATIC_CACHE    = 'static-v1';
+const STATIC_CACHE    = 'static-v2';
 const DYNAMIC_CACHE   = 'dynamic-v1';
 const INMUTABLE_CACHE = 'inmutable-v1';
 
@@ -18,7 +21,9 @@ const APP_SHELL = [
     'img/avatars/thor.jpg',
     'img/avatars/wolverine.jpg',
     'js/app.js',
-    'js/sw-utils.js'
+    'js/sw-utils.js',
+    'js/libs/plugins/mdtoast.min.js',
+    'js/libs/plugins/mdtoast.min.css'
 ];
 
 const APP_SHELL_INMUTABLE = [
@@ -26,7 +31,8 @@ const APP_SHELL_INMUTABLE = [
     'https://fonts.googleapis.com/css?family=Lato:400,300',
     'https://use.fontawesome.com/releases/v5.3.1/css/all.css',
     'https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.7.0/animate.css',
-    'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'
+    'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js',
+    'https://cdn.jsdelivr.net/npm/pouchdb@7.1.1/dist/pouchdb.min.js'
 ];
 
 
@@ -80,7 +86,7 @@ self.addEventListener( 'fetch', e => {
     if ( e.request.url.includes('/api') ) {
 
         respuesta = manejoApiMensajes( DYNAMIC_CACHE, e.request );
-        
+
     } else {
 
         respuesta = caches.match( e.request ).then( res => {
@@ -108,3 +114,19 @@ self.addEventListener( 'fetch', e => {
 });
 
 
+//tareas asíncronas
+self.addEventListener('sync', e => {
+
+    console.log('SW: Sync');
+
+    if ( e.tag === 'nuevo-post' ) {
+
+        //postear a BD cuando hay conexión
+       const respuesta = postearMensajes();
+
+        e.waitUntil( respuesta );
+    }
+
+
+
+});

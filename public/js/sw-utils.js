@@ -44,22 +44,36 @@ function actualizaCacheStatico( staticCache, req, APP_SHELL_INMUTABLE ) {
 // Network with cache fallback / update
 function manejoApiMensajes( cacheName, req ) {
 
-    return fetch( req ).then( res => {
+    if ( req.clone().method === 'POST' ) {
+        // POSTEO de un nuevo mensaje
+        if ( self.registration.sync ) { // hace posteo offline si el browser lo soporta
+            return req.clone().text().then( body => {
 
-        if ( res.ok ) {
-            actualizaCacheDinamico( cacheName, req, res.clone() );
-            return res.clone();
-        } else {
-            return caches.match( req );
+                const bodyObj = JSON.parse( body );
+                return guardarMensaje( bodyObj );
+            });
+        } else { // sino habra que decirle desde el front que lo haga cuando tenga conexion
+            return fetch( req );
         }
+        
 
-    }).catch( err => {
+    } else {
 
-        return caches.match( req );
+        return fetch( req ).then( res => {
 
-    });
+            if ( res.ok ) {
+                actualizaCacheDinamico( cacheName, req, res.clone() );
+                return res.clone();
+            } else {
+                return caches.match( req );
+            }
     
+        }).catch( err => {
+    
+            return caches.match( req );
+    
+        });
 
-
+    }
 
 }
